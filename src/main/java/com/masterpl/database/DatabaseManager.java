@@ -101,7 +101,7 @@ public class DatabaseManager {
 
     public List<HistoryEntry> getHistory(UUID itemUuid) {
         List<HistoryEntry> history = new ArrayList<>();
-        String sql = "SELECT timestamp, event_key, event_args FROM item_history WHERE item_uuid = ? ORDER BY timestamp ASC";
+        String sql = "SELECT timestamp, event_key, event_args FROM item_history WHERE item_uuid = ? ORDER BY timestamp DESC";
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, itemUuid.toString());
