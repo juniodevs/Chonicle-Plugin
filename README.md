@@ -64,8 +64,10 @@ Este projeto utiliza Maven para gerenciamento de dependências e construção.
 
 ## 🤝 Contribuição
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests para melhorar o plugin.
+Este projeto é livre e aberto para todos! Toda ajuda é muito bem-vinda.
+
+Se você quiser contribuir com código, corrigir bugs, sugerir novas funcionalidades ou **traduzir o plugin para outros idiomas**, sinta-se à vontade para abrir uma Issue ou enviar um Pull Request.
 
 ## 📝 Licença
 
-Este projeto é de código aberto.
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
