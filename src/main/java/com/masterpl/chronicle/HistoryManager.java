@@ -93,7 +93,7 @@ public class HistoryManager {
             for (HistoryEntry entry : entries) {
                 String dateStr = dateFormat.format(new Date(entry.getTimestamp()));
                 String msg = plugin.getLanguageManager().getMessage(entry.getKey(), entry.getArgs());
-                translatedHistory.add("§8» §7" + dateStr + " §r" + msg);
+                translatedHistory.add("§8- §7" + dateStr + " §r" + msg);
             }
             return translatedHistory;
         });
