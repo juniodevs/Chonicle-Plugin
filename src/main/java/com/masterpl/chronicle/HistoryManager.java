@@ -36,9 +36,11 @@ public class HistoryManager {
     }
 
     private UUID getOrCreateItemUUID(ItemStack item, String creator) {
-        if (item == null || !item.hasItemMeta()) return null;
+        if (item == null) return null;
         
         ItemMeta meta = item.getItemMeta();
+        if (meta == null) return null;
+
         PersistentDataContainer container = meta.getPersistentDataContainer();
         String uuidStr = container.get(uuidKey, PersistentDataType.STRING);
         
@@ -55,25 +57,17 @@ public class HistoryManager {
     }
 
     public void addHistory(ItemStack item, String key, String... args) {
-        if (item == null || !item.hasItemMeta()) return;
+        if (item == null) return;
 
-        // Se não tem criador definido ainda, usa "Unknown" ou o primeiro argumento se for forja
         String creator = "Unknown";
         if (key.equals("history.forged") && args.length > 0) {
             creator = args[0];
         }
 
         UUID uuid = getOrCreateItemUUID(item, creator);
-        db.addHistoryEntry(uuid, key, args);
-        
-        // Update lore with translated message
-        ItemMeta meta = item.getItemMeta();
-        List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
-        String translated = plugin.getLanguageManager().getMessage(key, args);
-        lore.add("§7" + dateFormat.format(new Date()) + " - " + translated);
-        meta.setLore(lore);
+        if (uuid == null) return;
 
-        item.setItemMeta(meta);
+        db.addHistoryEntry(uuid, key, args);
     }
 
     public List<String> getHistory(ItemStack item) {
@@ -86,7 +80,7 @@ public class HistoryManager {
         for (HistoryEntry entry : entries) {
             String dateStr = dateFormat.format(new Date(entry.getTimestamp()));
             String msg = plugin.getLanguageManager().getMessage(entry.getKey(), entry.getArgs());
-            translatedHistory.add(dateStr + " - " + msg);
+            translatedHistory.add("§8» §7" + dateStr + " §r" + msg);
         }
 
         return translatedHistory;

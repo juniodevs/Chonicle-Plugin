@@ -1,14 +1,47 @@
 command:
   only_players: "&cApenas jogadores podem usar este comando."
   no_item: "&cVocê precisa ter um item na mão."
-  no_history: "&eEste item não tem história conhecida."
+  no_history: "&7Este item não tem história conhecida."
 book:
-  title: "História do Item"
-  author: "Chronicle"
-  intro: "&1&lHistória de:\n&0%item_name%\n\n"
+  title: "&8&lCrônicas"
+  author: "&8O Escriba"
+  intro: "&0&m------------------&r\n  &4&l† LEGADO DE †\n   &n%item_name%&r\n&0&m------------------&r\n\n"
 history:
-  forged: "Forjado por %arg0%"
-  killed: "Tirou a vida de %arg0%"
-  found: "Encontrado por %arg0%"
-  given: "Recebido de %arg0% por %arg1%"
-  stolen: "Saqueado dos restos de %arg0% por %arg1%"
+  forged: 
+    - "&8Forjado no fogo por &4%arg0%"
+    - "&8Moldado nas sombras por &4%arg0%"
+    - "&8Criado para a guerra por &4%arg0%"
+  killed: 
+    - "&4Ceifou a vida de &8&l%arg0%"
+    - "&4Bebeu o sangue de &8&l%arg0%"
+    - "&4Trouxe o fim para &8&l%arg0%"
+    - "&4Executou &8&l%arg0% &4a sangue frio"
+  found: 
+    - "&2Recuperado do esquecimento por &2%arg0%"
+    - "&2Resgatado das cinzas por &2%arg0%"
+    - "&2Encontrado pelo destino nas mãos de &2%arg0%"
+  given: 
+    - "&8Passado de &7%arg0% &8para &7%arg1%"
+    - "&8Herdado por &7%arg1% &8das mãos de &7%arg0%"
+    - "&8Confiado a &7%arg1% &8por &7%arg0%"
+  stolen: 
+    - "&4Roubado dos restos de &8%arg0% &4por &4%arg1%"
+    - "&4Saqueado do cadáver de &8%arg0% &4por &4%arg1%"
+    - "&4Tomado à força de &8%arg0% &4por &4%arg1%"
+  enchanted:
+    - "&5Imbuído com magia negra por &5%arg0%"
+    - "&5Recebeu o toque arcano de &5%arg0%"
+    - "&5Encantado com poder antigo por &5%arg0%"
+  renamed:
+    - "&3Batizado como '&3%arg1%&3' por &1%arg0%"
+    - "&3Recebeu o nome '&3%arg1%&3' de &1%arg0%"
+  repaired:
+    - "&7Reforjado e renovado por &8%arg0%"
+    - "&7Restaurado à glória por &8%arg0%"
+  traded:
+    - "&8Adquirido de um mercador por &7%arg0%"
+    - "&8Negociado em troca de ouro por &7%arg0%"
+  blocked:
+    - "&1Suportou a fúria de &1&l%arg0%"
+    - "&1Conteve o golpe devastador de &1&l%arg0%"
+    - "&1Protegeu seu dono contra &1&l%arg0%"

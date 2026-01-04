@@ -19,6 +19,13 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.UUID;
 
+import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.MerchantInventory;
+
 public class ChronicleListener implements Listener {
 
     private final Chronicles plugin;
@@ -42,6 +49,81 @@ public class ChronicleListener implements Listener {
             || name.endsWith("_CHESTPLATE") || name.endsWith("_LEGGINGS") || name.endsWith("_BOOTS")
             || type == Material.BOW || type == Material.CROSSBOW || type == Material.TRIDENT 
             || type == Material.SHIELD || type == Material.ELYTRA;
+    }
+
+    @EventHandler
+    public void onEnchant(EnchantItemEvent event) {
+        ItemStack item = event.getItem();
+        if (isTrackable(item.getType())) {
+            historyManager.addHistory(item, "history.enchanted", event.getEnchanter().getName());
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (event.getSlotType() != InventoryType.SlotType.RESULT) return;
+        
+        ItemStack result = event.getCurrentItem();
+        if (result == null || result.getType() == Material.AIR || !isTrackable(result.getType())) return;
+        
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        Player player = (Player) event.getWhoClicked();
+        
+        if (event.getInventory().getType() == InventoryType.ANVIL) {
+            AnvilInventory anvil = (AnvilInventory) event.getInventory();
+            ItemStack original = anvil.getItem(0); 
+            
+            if (original != null) {
+                String oldName = original.hasItemMeta() && original.getItemMeta().hasDisplayName() 
+                        ? original.getItemMeta().getDisplayName() : "";
+                String newName = result.hasItemMeta() && result.getItemMeta().hasDisplayName() 
+                        ? result.getItemMeta().getDisplayName() : "";
+                
+                if (!newName.equals(oldName) && !newName.isEmpty()) {
+                    historyManager.addHistory(result, "history.renamed", player.getName(), newName);
+                } else {
+                    historyManager.addHistory(result, "history.repaired", player.getName());
+                }
+            }
+        }
+        else if (event.getInventory().getType() == InventoryType.MERCHANT) {
+            historyManager.addHistory(result, "history.traded", player.getName());
+        }
+    }
+
+    @EventHandler
+    public void onShieldBlock(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+        Player defender = (Player) event.getEntity();
+        
+        if (defender.isBlocking()) {
+            boolean isBoss = false;
+            switch (event.getDamager().getType()) {
+                case ENDER_DRAGON:
+                case WITHER:
+                case WARDEN:
+                case ELDER_GUARDIAN:
+                    isBoss = true;
+                    break;
+            }
+            
+            if (isBoss || event.getDamage() > 8.0) {
+                ItemStack activeItem = null;
+                if (defender.getInventory().getItemInMainHand().getType() == Material.SHIELD) {
+                    activeItem = defender.getInventory().getItemInMainHand();
+                } else if (defender.getInventory().getItemInOffHand().getType() == Material.SHIELD) {
+                    activeItem = defender.getInventory().getItemInOffHand();
+                }
+
+                if (activeItem != null) {
+                    String attackerName = event.getDamager().getName();
+                    if (event.getDamager() instanceof Player) {
+                        attackerName = ((Player) event.getDamager()).getName();
+                    }
+                    historyManager.addHistory(activeItem, "history.blocked", attackerName);
+                }
+            }
+        }
     }
 
     @EventHandler
@@ -115,7 +197,6 @@ public class ChronicleListener implements Listener {
         boolean isSelfPickup = false;
         boolean eventLogged = false;
 
-        // Check for manual drop
         if (entityContainer.has(dropperKey, PersistentDataType.STRING)) {
             String dropperUuidStr = entityContainer.get(dropperKey, PersistentDataType.STRING);
             long dropTime = entityContainer.getOrDefault(dropTimeKey, PersistentDataType.LONG, 0L);
@@ -135,7 +216,6 @@ public class ChronicleListener implements Listener {
         }
         
         // Check for death drop (stored on ItemStack NBT)
-        if (itemStack.hasItemMeta()) {
             ItemMeta meta = itemStack.getItemMeta();
             PersistentDataContainer itemContainer = meta.getPersistentDataContainer();
             
@@ -166,8 +246,6 @@ public class ChronicleListener implements Listener {
             }
         }
         
-        // Generic Found - Only if not self-pickup and not already logged
-        if (!isSelfPickup && !eventLogged) {
              if (historyManager.hasHistory(itemStack)) {
                  historyManager.addHistory(itemStack, "history.found", picker.getName());
              }

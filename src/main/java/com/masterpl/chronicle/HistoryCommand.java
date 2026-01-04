@@ -66,15 +66,12 @@ public class HistoryCommand implements CommandExecutor {
             String intro = plugin.getLanguageManager().getMessage("book.intro").replace("%item_name%", itemName);
             pageContent.append(intro);
 
-            // Título ocupa espaço (estimativa segura de 4 linhas para o cabeçalho)
             int lines = 4; 
 
             for (String entry : history) {
-                String lineText = "§0- " + entry;
-                // Estimar quebra de linha (aprox 25 caracteres por linha no livro para evitar cortes)
+                String lineText = entry;
                 int estimatedEntryLines = 1 + (lineText.length() / 25);
 
-                // Se adicionar essa entrada passar de 13 linhas, cria nova página
                 if (lines + estimatedEntryLines > 13) {
                     meta.addPage(pageContent.toString());
                     pageContent = new StringBuilder();
