@@ -12,7 +12,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class HistoryManager {
 
@@ -20,6 +23,7 @@ public class HistoryManager {
     private final NamespacedKey uuidKey;
     private final SimpleDateFormat dateFormat;
     private final DatabaseManager db;
+    private final Map<UUID, Map<String, Long>> cooldowns = new ConcurrentHashMap<>();
 
     public HistoryManager(Chronicles plugin) {
         this.plugin = plugin;
@@ -67,23 +71,32 @@ public class HistoryManager {
         UUID uuid = getOrCreateItemUUID(item, creator);
         if (uuid == null) return;
 
+        Map<String, Long> itemCooldowns = cooldowns.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>());
+        long lastTime = itemCooldowns.getOrDefault(key, 0L);
+        long currentTime = System.currentTimeMillis();
+
+        if (currentTime - lastTime < 10000) {
+            return;
+        }
+        itemCooldowns.put(key, currentTime);
+
         db.addHistoryEntry(uuid, key, args);
     }
 
-    public List<String> getHistory(ItemStack item) {
+    public CompletableFuture<List<String>> getHistory(ItemStack item) {
         UUID uuid = getItemUUID(item);
-        if (uuid == null) return new ArrayList<>();
+        if (uuid == null) return CompletableFuture.completedFuture(new ArrayList<>());
 
-        List<HistoryEntry> entries = db.getHistory(uuid);
-        List<String> translatedHistory = new ArrayList<>();
-        
-        for (HistoryEntry entry : entries) {
-            String dateStr = dateFormat.format(new Date(entry.getTimestamp()));
-            String msg = plugin.getLanguageManager().getMessage(entry.getKey(), entry.getArgs());
-            translatedHistory.add("§8» §7" + dateStr + " §r" + msg);
-        }
-
-        return translatedHistory;
+        return db.getHistory(uuid).thenApply(entries -> {
+            List<String> translatedHistory = new ArrayList<>();
+            
+            for (HistoryEntry entry : entries) {
+                String dateStr = dateFormat.format(new Date(entry.getTimestamp()));
+                String msg = plugin.getLanguageManager().getMessage(entry.getKey(), entry.getArgs());
+                translatedHistory.add("§8» §7" + dateStr + " §r" + msg);
+            }
+            return translatedHistory;
+        });
     }
 
     public boolean hasHistory(ItemStack item) {

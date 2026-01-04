@@ -10,6 +10,9 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
 public class DatabaseManager {
@@ -17,10 +20,12 @@ public class DatabaseManager {
     private final Chronicles plugin;
     private Connection connection;
     private final Gson gson;
+    private final ExecutorService executor;
 
     public DatabaseManager(Chronicles plugin) {
         this.plugin = plugin;
         this.gson = new Gson();
+        this.executor = Executors.newSingleThreadExecutor();
         initializeDatabase();
     }
 
@@ -34,6 +39,9 @@ public class DatabaseManager {
 
         try {
             connection = DriverManager.getConnection(url);
+            try (Statement stmt = connection.createStatement()) {
+                stmt.execute("PRAGMA foreign_keys = ON;");
+            }
             createTables();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Could not connect to SQLite database", e);
@@ -65,6 +73,7 @@ public class DatabaseManager {
     }
 
     public void close() {
+        executor.shutdown();
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
@@ -75,49 +84,55 @@ public class DatabaseManager {
     }
 
     public void registerItem(UUID itemUuid, String creator) {
-        String sql = "INSERT OR IGNORE INTO items (uuid, creator, created_at) VALUES (?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, itemUuid.toString());
-            pstmt.setString(2, creator);
-            pstmt.setLong(3, System.currentTimeMillis());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        executor.submit(() -> {
+            String sql = "INSERT OR IGNORE INTO items (uuid, creator, created_at) VALUES (?, ?, ?)";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, itemUuid.toString());
+                pstmt.setString(2, creator);
+                pstmt.setLong(3, System.currentTimeMillis());
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Error registering item", e);
+            }
+        });
     }
 
     public void addHistoryEntry(UUID itemUuid, String key, String[] args) {
-        String sql = "INSERT INTO item_history (item_uuid, timestamp, event_key, event_args) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, itemUuid.toString());
-            pstmt.setLong(2, System.currentTimeMillis());
-            pstmt.setString(3, key);
-            pstmt.setString(4, gson.toJson(args));
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        executor.submit(() -> {
+            String sql = "INSERT INTO item_history (item_uuid, timestamp, event_key, event_args) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, itemUuid.toString());
+                pstmt.setLong(2, System.currentTimeMillis());
+                pstmt.setString(3, key);
+                pstmt.setString(4, gson.toJson(args));
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Error adding history entry", e);
+            }
+        });
     }
 
-    public List<HistoryEntry> getHistory(UUID itemUuid) {
-        List<HistoryEntry> history = new ArrayList<>();
-        String sql = "SELECT timestamp, event_key, event_args FROM item_history WHERE item_uuid = ? ORDER BY timestamp DESC";
-        
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, itemUuid.toString());
-            ResultSet rs = pstmt.executeQuery();
+    public CompletableFuture<List<HistoryEntry>> getHistory(UUID itemUuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            List<HistoryEntry> history = new ArrayList<>();
+            String sql = "SELECT timestamp, event_key, event_args FROM item_history WHERE item_uuid = ? ORDER BY timestamp DESC";
+            
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, itemUuid.toString());
+                ResultSet rs = pstmt.executeQuery();
 
-            while (rs.next()) {
-                long timestamp = rs.getLong("timestamp");
-                String key = rs.getString("event_key");
-                String argsJson = rs.getString("event_args");
-                String[] args = gson.fromJson(argsJson, String[].class);
-                
-                history.add(new HistoryEntry(timestamp, key, args));
+                while (rs.next()) {
+                    long timestamp = rs.getLong("timestamp");
+                    String key = rs.getString("event_key");
+                    String argsJson = rs.getString("event_args");
+                    String[] args = gson.fromJson(argsJson, String[].class);
+                    
+                    history.add(new HistoryEntry(timestamp, key, args));
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Error getting history", e);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return history;
+            return history;
+        }, executor);
     }
 }

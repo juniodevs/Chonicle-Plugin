@@ -244,11 +244,9 @@ public class ChronicleListener implements Listener {
                 itemStack.setItemMeta(meta);
                 itemEntity.setItemStack(itemStack);
             }
-        }
-        
-             if (historyManager.hasHistory(itemStack)) {
-                 historyManager.addHistory(itemStack, "history.found", picker.getName());
-             }
-        }
+
+            if (!eventLogged && !isSelfPickup && historyManager.hasHistory(itemStack)) {
+                historyManager.addHistory(itemStack, "history.found", picker.getName());
+            }
     }
 }

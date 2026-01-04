@@ -38,14 +38,14 @@ public class HistoryCommand implements CommandExecutor {
             return true;
         }
 
-        List<String> history = historyManager.getHistory(item);
+        historyManager.getHistory(item).thenAccept(history -> {
+            if (history.isEmpty()) {
+                player.sendMessage(plugin.getLanguageManager().getMessage("command.no_history"));
+                return;
+            }
 
-        if (history.isEmpty()) {
-            player.sendMessage(plugin.getLanguageManager().getMessage("command.no_history"));
-            return true;
-        }
-
-        openHistoryBook(player, item, history);
+            plugin.getServer().getScheduler().runTask(plugin, () -> openHistoryBook(player, item, history));
+        });
         return true;
     }
 
