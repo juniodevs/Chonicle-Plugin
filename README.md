@@ -50,11 +50,11 @@ Este projeto utiliza Maven para gerenciamento de dependências e construção.
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/seu-usuario/MasterPl.git
+   git clone https://github.com/juniodevs/Chonicle-Plugin.git
    ```
 2. Navegue até a pasta do projeto:
    ```bash
-   cd MasterPl
+   cd Chonicle-Plugin
    ```
 3. Compile o projeto:
    ```bash
