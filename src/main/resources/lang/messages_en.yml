@@ -1,0 +1,14 @@
+command:
+  only_players: "&cOnly players can use this command."
+  no_item: "&cYou must hold an item."
+  no_history: "&eThis item has no known history."
+book:
+  title: "Item History"
+  author: "Chronicle"
+  intro: "&1&lHistory of:\n&0%item_name%\n\n"
+history:
+  forged: "Forged by %arg0%"
+  killed: "Took the life of %arg0%"
+  found: "Found by %arg0%"
+  given: "Received from %arg0% by %arg1%"
+  stolen: "Looted from remains of %arg0% by %arg1%"

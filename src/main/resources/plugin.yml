@@ -1,0 +1,13 @@
+name: Chronicles
+version: 1.0
+author: juniodevs
+main: com.masterpl.Chronicles
+api-version: 1.20
+commands:
+  history:
+    description: Mostra a história do item na mão
+    usage: /history
+permissions:
+  masterpl.history:
+    description: Permite ver a história do item
+    default: true
