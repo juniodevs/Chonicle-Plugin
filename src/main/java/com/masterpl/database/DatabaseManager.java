@@ -107,9 +107,34 @@ public class DatabaseManager {
                 pstmt.setString(4, gson.toJson(args));
                 pstmt.executeUpdate();
             } catch (SQLException e) {
-                plugin.getLogger().log(Level.SEVERE, "Error adding history entry", e);
+                if (e.getMessage() != null && e.getMessage().contains("FOREIGN KEY constraint failed")) {
+                    ensureItemExists(itemUuid);
+                    try (PreparedStatement retryStmt = connection.prepareStatement(sql)) {
+                        retryStmt.setString(1, itemUuid.toString());
+                        retryStmt.setLong(2, System.currentTimeMillis());
+                        retryStmt.setString(3, key);
+                        retryStmt.setString(4, gson.toJson(args));
+                        retryStmt.executeUpdate();
+                    } catch (SQLException ex) {
+                        plugin.getLogger().log(Level.SEVERE, "Error adding history entry after retry", ex);
+                    }
+                } else {
+                    plugin.getLogger().log(Level.SEVERE, "Error adding history entry", e);
+                }
             }
         });
+    }
+
+    private void ensureItemExists(UUID itemUuid) {
+        String sql = "INSERT OR IGNORE INTO items (uuid, creator, created_at) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, itemUuid.toString());
+            pstmt.setString(2, "Unknown");
+            pstmt.setLong(3, System.currentTimeMillis());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Error ensuring item exists", e);
+        }
     }
 
     public CompletableFuture<List<HistoryEntry>> getHistory(UUID itemUuid) {
